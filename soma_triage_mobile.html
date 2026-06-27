@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SOMA — Triaje</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --border: #e2e1dc;
+    --border-strong: #c8c7c0;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b66;
+    --text-muted: #a0a09a;
+    --accent-bg: #eef4ff;
+    --accent-text: #1a56db;
+    --accent-border: #bdd0ff;
+    --success-bg: #ecfdf5;
+    --success-text: #065f46;
+    --success-border: #a7f3d0;
+    --warning-bg: #fffbeb;
+    --warning-text: #92400e;
+    --warning-border: #fcd34d;
+    --danger-bg: #fef2f2;
+    --danger-text: #991b1b;
+    --danger-border: #fecaca;
+    --pro-bg: #f5f3ff;
+    --pro-text: #5b21b6;
+    --pro-border: #ddd6fe;
+    --radius: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #242422;
+      --border: #3a3a36;
+      --border-strong: #525250;
+      --text-primary: #f0efe8;
+      --text-secondary: #a0a09a;
+      --text-muted: #6b6b66;
+      --accent-bg: #1e2d4a;
+      --accent-text: #93bbff;
+      --accent-border: #2d4a7a;
+      --success-bg: #0d2d1e;
+      --success-text: #6ee7b7;
+      --success-border: #065f46;
+      --warning-bg: #2d2005;
+      --warning-text: #fcd34d;
+      --warning-border: #92400e;
+      --danger-bg: #2d0f0f;
+      --danger-text: #fca5a5;
+      --danger-border: #991b1b;
+      --pro-bg: #1e1530;
+      --pro-text: #c4b5fd;
+      --pro-border: #5b21b6;
+    }
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 28px 18px 60px;
+  }
+
+  .logo {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .step-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    min-height: 14px;
+  }
+
+  .block-title {
+    font-size: 21px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin-bottom: 6px;
+  }
+
+  .block-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 22px;
+  }
+
+  .options-grid {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 20px;
+  }
+
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 14px 15px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .opt:active { background: var(--bg); }
+  .opt.sel { border-color: var(--text-primary); background: var(--surface); }
+  .opt.sel .radio { background: var(--text-primary); border-color: var(--text-primary); }
+  .opt.sel .radio::after { opacity: 1; }
+  .opt.sel .opt-label { font-weight: 500; }
+
+  .radio {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.15s;
+  }
+
+  .radio::after {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .opt-label { font-size: 15px; color: var(--text-primary); line-height: 1.3; }
+  .opt-desc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .bool-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 15px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 9px;
+    gap: 10px;
+    transition: border-color 0.15s;
+  }
+
+  .bool-row.answered { border-color: var(--border-strong); }
+  .bool-label { font-size: 14px; color: var(--text-primary); flex: 1; line-height: 1.4; }
+  .bool-toggle { display: flex; gap: 7px; flex-shrink: 0; }
+
+  .tbtn {
+    padding: 7px 18px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    min-width: 52px;
+  }
+
+  .tbtn:active { opacity: 0.7; }
+  .tbtn.yes { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); font-weight: 500; }
+  .tbtn.no  { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); font-weight: 500; }
+
+  .cta {
+    width: 100%;
+    padding: 16px;
+    background: var(--text-primary);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s;
+  }
+
+  .cta:active { opacity: 0.8; }
+  .cta:disabled { opacity: 0.28; cursor: default; }
+
+  .back {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .rec-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 9px;
+    cursor: pointer;
+    padding: 15px 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .rec-card:active { background: var(--bg); }
+  .rec-card.sel { border-color: var(--text-primary); }
+  .rec-card.sel .rec-title { font-weight: 600; }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    padding: 3px 9px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  .badge-rec { background: var(--accent-bg); color: var(--accent-text); }
+  .badge-alt { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border-strong); }
+  .badge-adv { background: var(--pro-bg); color: var(--pro-text); }
+
+  .rec-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+  .rec-desc  { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .rec-meta  { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 12px; }
+
+  .entry-card {
+    padding: 20px 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .entry-card:active { background: var(--bg); }
+  .entry-card.sel-entry { border-color: var(--text-primary); }
+
+  .entry-icon { font-size: 26px; margin-bottom: 10px; }
+  .entry-label { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .entry-sub   { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+  .tx-select { display: none; margin-top: 12px; }
+
+  select.native {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 15px;
+    margin-bottom: 12px;
+    font-family: inherit;
+    appearance: auto;
+    -webkit-appearance: auto;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .confirm-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 18px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .confirm-icon { font-size: 36px; margin-bottom: 10px; }
+  .confirm-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+  .confirm-sub   { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
+
+  .confirm-tx {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 7px 18px;
+    border-radius: 6px;
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    text-transform: uppercase;
+  }
+
+  .confirm-detail { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+
+  .internal-banner {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 13px;
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    border-radius: 7px;
+    margin-bottom: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--warning-text);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .internal-banner svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  .internal-box {
+    background: var(--surface);
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 12px;
+    padding: 4px 15px 8px;
+    margin-bottom: 16px;
+  }
+
+  .internal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+
+  .internal-row:last-child { border-bottom: none; }
+  .internal-key { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+  .internal-val { font-size: 13px; color: var(--text-primary); font-weight: 500; text-align: right; }
+
+  .flag-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .fp-ok   { background: var(--success-bg); color: var(--success-text); }
+  .fp-soft { background: var(--warning-bg); color: var(--warning-text); }
+  .fp-hard { background: var(--danger-bg);  color: var(--danger-text); }
+
+  .micro {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.6;
+    margin-top: 14px;
+    padding: 0 8px;
+  }
+
+  .depth-q-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">S O M A</div>
+  <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+  <div class="step-label" id="sLabel">&nbsp;</div>
+  <div id="app"></div>
+</div>
+
+<script>
+const S = {
+  step: "entry",
+  entryType: null,
+  selectedTx: null,
+  intention: null,
+  depth: {},
+  security: { conditions: null, medication: null, pregnancy: null, allergies: null },
+  firstTime: null,
+  selectedRec: null,
+};
+
+const TREATMENTS = [
+  { id: "foundation",  label: "FOUNDATION",  desc: "Base integral, ideal para empezar" },
+  { id: "recovery",    label: "RECOVERY",    desc: "Energia y recuperacion post-entrenamiento" },
+  { id: "skin-glow",   label: "SKIN GLOW",   desc: "Hidratacion, luminosidad y piel" },
+  { id: "neuro-flow",  label: "NEURO-FLOW",  desc: "Claridad y rendimiento mental" },
+  { id: "neuro-calm",  label: "NEURO-CALM",  desc: "Bajar el ritmo, calmar el sistema nervioso" },
+  { id: "eternal",     label: "ETERNAL",     desc: "Longevidad y optimizacion celular con NAD+" },
+];
+
+const INTENTIONS = [
+  { id: "energy",     label: "Energia y fatiga",         desc: "Cansancio, bajo rendimiento fisico" },
+  { id: "stress",     label: "Estres y claridad mental", desc: "Foco, tension, agotamiento mental" },
+  { id: "recovery",   label: "Recuperacion fisica",      desc: "Post-entrenamiento, dolor, rendimiento" },
+  { id: "aesthetics", label: "Piel y estetica",          desc: "Brillo, hidratacion, antioxidantes" },
+  { id: "longevity",  label: "Salud a largo plazo",      desc: "Prevencion, optimizacion celular" },
+  { id: "unknown",    label: "No estoy seguro",          desc: "Te orientamos para elegir" },
+];
+
+const DEPTH = {
+  energy:     [
+    { id: "duration",  q: "Hace cuanto tiempo te sentis asi?", opts: ["Dias", "Semanas", "Meses"] },
+    { id: "intensity", q: "Que tan intenso es?",               opts: ["Leve", "Moderado", "Alto"] },
+  ],
+  stress:     [
+    { id: "type",  q: "Como se manifiesta principalmente?", opts: ["Mental", "Fisico", "Ambos"] },
+    { id: "sleep", q: "Como estas durmiendo?",              opts: ["Bien", "Regular", "Mal"] },
+  ],
+  recovery:   [
+    { id: "activity", q: "Que tipo de actividad realizas?", opts: ["Ocasional", "Regular", "Intensa"] },
+    { id: "issue",    q: "Que te gustaria mejorar?",        opts: ["Fatiga muscular", "Dolor", "Rendimiento"] },
+  ],
+  aesthetics: [
+    { id: "focus", q: "Que area te interesa mas?", opts: ["Hidratacion", "Luminosidad", "Antienvejecimiento"] },
+  ],
+  longevity:  [
+    { id: "goal",       q: "Que buscas principalmente?",            opts: ["Prevencion", "Optimizacion"] },
+    { id: "experience", q: "Ya realizaste tratamientos similares?", opts: ["Si", "No"] },
+  ],
+  unknown:    [
+    { id: "describe", q: "Cual te describe mejor hoy?", opts: ["Me siento bien, quiero optimizar", "Me siento bajo o cansado", "Estoy estresado", "Solo quiero conocer"] },
+  ],
+};
+
+const RECS = {
+  energy:     { primary: "RECOVERY",    alt: "FOUNDATION",  adv: "ETERNAL" },
+  stress:     { primary: "NEURO-CALM",  alt: "NEURO-FLOW",  adv: "FOUNDATION" },
+  recovery:   { primary: "RECOVERY",    alt: "FOUNDATION",  adv: "ETERNAL" },
+  aesthetics: { primary: "SKIN GLOW",   alt: "FOUNDATION",  adv: null },
+  longevity:  { primary: "ETERNAL",     alt: "FOUNDATION",  adv: "NEURO-FLOW" },
+  unknown:    { primary: "FOUNDATION",  alt: "RECOVERY",    adv: null },
+};
+
+const TX_DATA = {
+  "FOUNDATION":  { desc: "Hidratacion base + vitaminas esenciales + electrolitos", sessions: 2, freq: "Quincenal" },
+  "RECOVERY":    { desc: "Aminoacidos + Zinc + Complejo B + Magnesio", sessions: 4, freq: "Post-entrenamiento" },
+  "SKIN GLOW":   { desc: "Vitamina C alta dosis + Glutathione + Biotina + Silicio", sessions: 6, freq: "Semanal" },
+  "NEURO-FLOW":  { desc: "Alpha-GPC + Taurina + B12 + L-Tirosina", sessions: 3, freq: "Semanal" },
+  "NEURO-CALM":  { desc: "Magnesio glicinato + GABA + B6 + L-Teanina", sessions: 3, freq: "Semanal" },
+  "ETERNAL":     { desc: "NAD+ + Resveratrol + Glutathione + Antioxidantes", sessions: 4, freq: "Mensual" },
+};
+
+const STEPS = ["entry","intention","depth","recommendation","security","firsttime","result"];
+const STEP_LABELS = { entry:"", intention:"Intencion", depth:"Contexto", recommendation:"Recomendacion", security:"Seguridad", firsttime:"Experiencia", result:"" };
+
+function flagCount() { return Object.values(S.security).filter(v => v === true).length; }
+
+function getInternal() {
+  const f = flagCount();
+  if (f >= 2)              return { path:"CONSULTORIO", pillCls:"fp-hard", pillLabel:"Flags criticos",       note:"Requiere evaluacion medica antes de la sesion." };
+  if (f === 1)             return { path:"CONSULTORIO", pillCls:"fp-soft", pillLabel:"Revision recomendada", note:"Chequeo rapido con el medico antes de comenzar." };
+  if (S.intention==="unknown") return { path:"CONSULTORIO", pillCls:"fp-soft", pillLabel:"Orientacion necesaria", note:"Paciente indeciso, orientar en persona." };
+  return { path:"DIRECTO AL POD", pillCls:"fp-ok", pillLabel:"Sin flags", note:"Paciente apto. Puede comenzar la sesion directamente." };
+}
+
+function getRecName() {
+  const map = RECS[S.intention] || RECS["unknown"];
+  return map[S.selectedRec] || map["primary"];
+}
+
+const iconBack = `<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>`;
+const iconLock = `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const iconCheck = `<svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--success-text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+
+function progress() {
+  const idx = STEPS.indexOf(S.step);
+  document.getElementById("pFill").style.width = Math.round((idx/(STEPS.length-1))*100)+"%";
+  document.getElementById("sLabel").textContent = STEP_LABELS[S.step] || "";
+}
+
+function render() {
+  progress();
+  const fns = { entry:rEntry, intention:rIntention, depth:rDepth, recommendation:rRec, security:rSecurity, firsttime:rFirst, result:rResult };
+  document.getElementById("app").innerHTML = (fns[S.step]||rEntry)();
+  bind();
+}
+
+function backBtn() { return `<button class="back" id="btnBack">${iconBack} Volver</button>`; }
+
+function rEntry() {
+  return `
+    <div class="block-title">Bienvenido a SOMA</div>
+    <div class="block-sub">Como queres comenzar tu experiencia?</div>
+    <div class="entry-grid">
+      <div class="entry-card" id="eExplore">
+        <div class="entry-icon">✦</div>
+        <div class="entry-label">Reservar</div>
+        <div class="entry-sub">Te guiamos para encontrar el tratamiento ideal</div>
+      </div>
+      <div class="entry-card" id="eDirect">
+        <div class="entry-icon">◎</div>
+        <div class="entry-label">Ya se que quiero</div>
+        <div class="entry-sub">Elegi tu tratamiento y confirmamos</div>
+      </div>
+    </div>
+    <div class="tx-select" id="txSelect">
+      <select class="native" id="txDrop">
+        <option value="">Selecciona un tratamiento...</option>
+        ${TREATMENTS.map(t=>`<option value="${t.id}">${t.label} — ${t.desc}</option>`).join("")}
+      </select>
+      <button class="cta" id="btnConfirmTx" disabled>Continuar</button>
+    </div>`;
+}
+
+function rIntention() {
+  const isDirect = S.entryType==="direct";
+  const txLabel = S.selectedTx ? TREATMENTS.find(t=>t.id===S.selectedTx)?.label : "";
+  return `
+    ${backBtn()}
+    <div class="block-title">${isDirect ? `Que te motivo a elegir ${txLabel}?` : "Que te gustaria mejorar hoy?"}</div>
+    <div class="block-sub">${isDirect ? "Tu objetivo nos ayuda a validar y personalizar la sesion." : "Elegi la opcion que mejor te describe."}</div>
+    <div class="options-grid">
+      ${INTENTIONS.map(i=>`
+        <button class="opt${S.intention===i.id?" sel":""}" data-int="${i.id}">
+          <div class="radio"></div>
+          <div>
+            <div class="opt-label">${i.label}</div>
+            <div class="opt-desc">${i.desc}</div>
+          </div>
+        </button>`).join("")}
+    </div>
+    <button class="cta" id="btnIntNext" ${S.intention?"":"disabled"}>Continuar</button>`;
+}
+
+function rDepth() {
+  const qs = DEPTH[S.intention]||[];
+  if(!qs.length){ S.step="recommendation"; return rRec(); }
+  const allAnswered = qs.every(q=>S.depth[q.id]);
+  return `
+    ${backBtn()}
+    <div class="block-title">Un par de preguntas rapidas</div>
+    <div class="block-sub">Solo lo necesario para darte la mejor recomendacion.</div>
+    ${qs.map(q=>`
+      <div style="margin-bottom:20px">
+        <div class="depth-q-label">${q.q}</div>
+        <div class="options-grid">
+          ${q.opts.map(o=>`
+            <button class="opt${S.depth[q.id]===o?" sel":""}" data-dq="${q.id}" data-dv="${o}" style="padding:12px 14px">
+              <div class="radio"></div>
+              <div class="opt-label" style="font-size:14px">${o}</div>
+            </button>`).join("")}
+        </div>
+      </div>`).join("")}
+    <button class="cta" id="btnDepthNext" ${allAnswered?"":"disabled"}>Ver recomendacion</button>`;
+}
+
+function rRec() {
+  const map = RECS[S.intention]||RECS["unknown"];
+  const isDirect = S.entryType==="direct";
+  function card(key, badgeCls, badgeTxt) {
+    const name = map[key]; if(!name) return "";
+    const tx = TX_DATA[name];
+    return `
+      <div class="rec-card${S.selectedRec===key?" sel":""}" data-rec="${key}">
+        <div class="badge ${badgeCls}">${badgeTxt}</div>
+        <div>
+          <div class="rec-title">${name}</div>
+          <div class="rec-desc">${tx.desc}</div>
+          ${tx.sessions?`<div class="rec-meta">${tx.sessions} sesiones &middot; ${tx.freq}</div>`:""}
+        </div>
+      </div>`;
+  }
+  return `
+    ${backBtn()}
+    <div class="block-title">${isDirect?"Tu eleccion validada":"Segun tu perfil, te recomendamos"}</div>
+    <div class="block-sub">${isDirect?"Tu eleccion es compatible con tu objetivo.":"Podés confirmar esta opcion o explorar alternativas."}</div>
+    ${card("primary","badge-rec","Recomendado")}
+    ${card("alt","badge-alt","Alternativa")}
+    ${card("adv","badge-adv","Avanzado")}
+    <button class="cta" id="btnRecNext" ${S.selectedRec?"":"disabled"} style="margin-top:10px">Continuar</button>`;
+}
+
+function rSecurity() {
+  const fields = [
+    { id:"conditions", label:"Tenes alguna condicion medica relevante?" },
+    { id:"medication",  label:"Tomas medicacion actualmente?" },
+    { id:"pregnancy",   label:"Estas embarazada o en periodo de lactancia?" },
+    { id:"allergies",   label:"Tenes alergias conocidas?" },
+  ];
+  const allAnswered = fields.every(f=>S.security[f.id]!==null);
+  return `
+    ${backBtn()}
+    <div class="block-title">Verificacion de seguridad</div>
+    <div class="block-sub">Esta informacion es confidencial y la usa nuestro equipo medico para tu seguridad.</div>
+    ${fields.map(f=>`
+      <div class="bool-row${S.security[f.id]!==null?" answered":""}">
+        <div class="bool-label">${f.label}</div>
+        <div class="bool-toggle">
+          <button class="tbtn${S.security[f.id]===true?" yes":""}" data-bf="${f.id}" data-bv="true">Si</button>
+          <button class="tbtn${S.security[f.id]===false?" no":""}"  data-bf="${f.id}" data-bv="false">No</button>
+        </div>
+      </div>`).join("")}
+    <button class="cta" id="btnSecNext" ${allAnswered?"":"disabled"} style="margin-top:12px">Continuar</button>`;
+}
+
+function rFirst() {
+  return `
+    ${backBtn()}
+    <div class="block-title">Es tu primera vez con este tipo de tratamientos?</div>
+    <div class="block-sub">Nos ayuda a preparar mejor tu experiencia.</div>
+    <div class="options-grid">
+      <button class="opt${S.firstTime==="si"?" sel":""}" data-ft="si">
+        <div class="radio"></div>
+        <div class="opt-label">Si, es mi primera vez</div>
+      </button>
+      <button class="opt${S.firstTime==="no"?" sel":""}" data-ft="no">
+        <div class="radio"></div>
+        <div class="opt-label">Ya hice tratamientos similares</div>
+      </button>
+    </div>
+    <button class="cta" id="btnFirstNext" ${S.firstTime?"":"disabled"}>Ver resultado</button>`;
+}
+
+function rResult() {
+  const internal = getInternal();
+  const recName  = getRecName();
+  const tx       = TX_DATA[recName];
+  const intLabel = INTENTIONS.find(i=>i.id===S.intention)?.label||S.intention;
+  const btnLabel = S.entryType==="direct" ? "Confirmar reserva \u2192" : "Reservar tratamiento \u2192";
+  return `
+    <div class="block-title">Tu reserva esta lista</div>
+    <div class="block-sub">Revisa los detalles antes de confirmar.</div>
+
+    <div class="confirm-box">
+      <div class="confirm-icon">${iconCheck}</div>
+      <div class="confirm-title">Sesion reservada</div>
+      <div class="confirm-sub">Nuestro equipo se va a comunicar para coordinar fecha y horario.</div>
+      <div class="confirm-tx">${recName}</div>
+      <div class="confirm-detail">${tx.desc}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="internal-banner">${iconLock} Mensaje interno — no visible para el paciente</div>
+
+    <div class="internal-box">
+      <div class="internal-row">
+        <span class="internal-key">Routing</span>
+        <span class="internal-val">${internal.path}</span>
+      </div>
+      <div class="internal-row">
+        <span class="internal-key">Seguridad</span>
+        <span class="internal-val"><span class="flag-pill ${internal.pillCls}">${internal.pillLabel}</span></span>
+      </div>
+      <div class="internal-row">
+        <span class="internal-key">Intencion</span>
+        <span class="internal-val" style="max-width:55%;text-align:right">${intLabel}</span>
+      </div>
+      <div class="internal-row">
+        <span class="internal-key">Tratamiento</span>
+        <span class="internal-val">${recName}</span>
+      </div>
+      <div class="internal-row">
+        <span class="internal-key">Primera vez</span>
+        <span class="internal-val">${S.firstTime==="si"?"Si":"No"}</span>
+      </div>
+      <div class="internal-row">
+        <span class="internal-key">Nota</span>
+        <span class="internal-val" style="font-weight:400;color:var(--text-secondary);max-width:60%;text-align:right;font-size:12px">${internal.note}</span>
+      </div>
+    </div>
+
+    <button class="cta" id="btnConfirm">${btnLabel}</button>
+    <div class="micro">Nuestro equipo medico validara tu informacion antes de la sesion.</div>`;
+}
+
+function go(step){ S.step=step; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+
+function bind() {
+  const $  = id  => document.getElementById(id);
+  const $$ = sel => document.querySelectorAll(sel);
+
+  $("eExplore")?.addEventListener("click", ()=>{ S.entryType="explore"; go("intention"); });
+  $("eDirect")?.addEventListener("click",  ()=>{
+    $("txSelect").style.display="block";
+    $("eDirect").classList.add("sel-entry");
+    $("eExplore").classList.remove("sel-entry");
+  });
+  $("txDrop")?.addEventListener("change", e=>{ S.selectedTx=e.target.value; $("btnConfirmTx").disabled=!S.selectedTx; });
+  $("btnConfirmTx")?.addEventListener("click", ()=>{ S.entryType="direct"; go("intention"); });
+
+  $$("[data-int]").forEach(el=>el.addEventListener("click",()=>{
+    S.intention=el.dataset.int;
+    $$("[data-int]").forEach(e=>e.classList.remove("sel")); el.classList.add("sel");
+    const btn=$("btnIntNext"); if(btn) btn.disabled=false;
+  }));
+  $("btnIntNext")?.addEventListener("click",()=>go("depth"));
+
+  $$("[data-dq]").forEach(el=>el.addEventListener("click",()=>{
+    const q=el.dataset.dq, v=el.dataset.dv;
+    S.depth[q]=v;
+    $$(`[data-dq="${q}"]`).forEach(e=>e.classList.remove("sel")); el.classList.add("sel");
+    const qs=DEPTH[S.intention]||[];
+    const btn=$("btnDepthNext"); if(btn) btn.disabled=!qs.every(qq=>S.depth[qq.id]);
+  }));
+  $("btnDepthNext")?.addEventListener("click",()=>go("recommendation"));
+
+  $$("[data-rec]").forEach(el=>el.addEventListener("click",()=>{
+    S.selectedRec=el.dataset.rec;
+    $$("[data-rec]").forEach(e=>e.classList.remove("sel")); el.classList.add("sel");
+    const btn=$("btnRecNext"); if(btn) btn.disabled=false;
+  }));
+  $("btnRecNext")?.addEventListener("click",()=>go("security"));
+
+  $$("[data-bf]").forEach(el=>el.addEventListener("click",()=>{
+    const id=el.dataset.bf, val=el.dataset.bv==="true";
+    S.security[id]=val;
+    $$(`[data-bf="${id}"]`).forEach(e=>e.classList.remove("yes","no"));
+    el.classList.add(val?"yes":"no");
+    const row=el.closest(".bool-row"); if(row) row.classList.add("answered");
+    const allOk=Object.values(S.security).every(v=>v!==null);
+    const btn=$("btnSecNext"); if(btn) btn.disabled=!allOk;
+  }));
+  $("btnSecNext")?.addEventListener("click",()=>go("firsttime"));
+
+  $$("[data-ft]").forEach(el=>el.addEventListener("click",()=>{
+    S.firstTime=el.dataset.ft;
+    $$("[data-ft]").forEach(e=>e.classList.remove("sel")); el.classList.add("sel");
+    const btn=$("btnFirstNext"); if(btn) btn.disabled=false;
+  }));
+  $("btnFirstNext")?.addEventListener("click",()=>go("result"));
+
+  $("btnBack")?.addEventListener("click",()=>{
+    const idx=STEPS.indexOf(S.step);
+    go(idx>0?STEPS[idx-1]:"entry");
+  });
+
+  $("btnConfirm")?.addEventListener("click",()=>{
+    alert("Reserva registrada. El equipo de SOMA se contactara pronto.");
+  });
+}
+
+render();
+</script>
+</body>
+</html>
